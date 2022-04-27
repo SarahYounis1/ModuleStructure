@@ -2,12 +2,16 @@ package com.example.domain.repository;
 
 
 import com.example.domain.aggregate.User;
+import com.example.security.models.AuthenticationRequest;
+import com.example.security.models.AuthenticationResponse;
 
 import java.util.List;
 
 public interface IUserRepository {
+    AuthenticationResponse createAuthenticationToken(AuthenticationRequest authenticationRequest);
+
     User save(User user);
     User update(User user);
-    void deleteByID(Long id);
-    User getByID(Long id);
+    void deleteByID();
+    User getByID();
 }

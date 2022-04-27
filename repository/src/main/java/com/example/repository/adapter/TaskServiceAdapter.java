@@ -45,7 +45,7 @@ public class TaskServiceAdapter implements ITaskRepository {
         UserEntity requestingUser= (UserEntity) SecurityContextHolder.getContext()
                 .getAuthentication().getPrincipal();
         return taskRepository.findAllByUser_Id(requestingUser.getId(), PageRequest.of(page.orElse(0), 5,
-                Sort.Direction.fromString(sortDirection.orElse("asc")),sortBy.orElse("id")));
+                Sort.Direction.fromString(sortDirection.orElse("desc")),sortBy.orElse("id")));
     }
 
     public TaskEntity getTask(Long id) throws AccessDeniedException {

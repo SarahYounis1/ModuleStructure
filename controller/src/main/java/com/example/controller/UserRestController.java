@@ -1,8 +1,9 @@
 package com.example.controller;
-import com.example.repository.adapter.UserServiceImplementation;
+import com.example.domain.aggregate.User;
 import com.example.repository.entity.UserEntity;
 import com.example.security.models.AuthenticationRequest;
 import com.example.security.models.AuthenticationResponse;
+import com.example.service.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,28 +16,28 @@ import java.io.IOException;
 //@RequestMapping("/api")
 public class UserRestController {
 
-    private UserServiceImplementation userServiceImplementation;
+    private UserService userService;
     private static final Logger LOGGER = LoggerFactory.getLogger(UserRestController.class);
 
     @Autowired
-    public UserRestController(UserServiceImplementation userServiceImplementation) {
-        this.userServiceImplementation = userServiceImplementation;
+    public UserRestController(UserService userServiceImp) {
+        this.userService = userServiceImp;
     }
 
 
     @GetMapping("/user")
-    public UserEntity returnUser()  {
+    public User returnUser()  {
         LOGGER.info("A get user request initialized ");
-        return userServiceImplementation.getUserInfo();
+        return userService.getByID();
     }
 
     //Adding Post Mapping to add new user
     @PostMapping("/register")
-    public UserEntity createNewUser(@RequestBody UserEntity newUser)  {
+    public User createNewUser(@RequestBody User newUser)  {
         LOGGER.info("A create user request initialized ");
         LOGGER.trace("Creating new user ");
         newUser.setId(0L);
-       return userServiceImplementation.createNewUser(newUser);
+       return userService.save(newUser);
         //return newUser;
     }
 
@@ -44,29 +45,29 @@ public class UserRestController {
     @PostMapping("/login")
     public AuthenticationResponse createAuthenticationToken(@RequestBody AuthenticationRequest authenticationRequest)
             throws BadCredentialsException {
-        return  userServiceImplementation.createAuthenticationToken(authenticationRequest);
+        return  userService.createAuthenticationToken(authenticationRequest);
     }
 
     @PutMapping("/user")
-    public UserEntity editUser(@RequestBody UserEntity editUser )  {
+    public User editUser(@RequestBody User editUser )  {
         LOGGER.info("A update user request initialized ");
         LOGGER.trace("updating user information " );
-        return userServiceImplementation.editUser(editUser);
+        return userService.update(editUser);
     }
     @DeleteMapping("/user")
     public void deleteUser() throws IOException {
-        userServiceImplementation.deleteUser( );
+        userService.deleteByID();
     }
 
     @PostMapping("/user/logout")
     public String logOut(HttpServletRequest request){
-        userServiceImplementation.logOut(request);
+        userService.logOut(request);
         return "You're logged out";
     }
 
     @PostMapping("/user/logoutAll")
     public String logOutAll(){
-        userServiceImplementation.logOutAll();
+        userService.logOutAll();
         return "You're logged out from all devices";
     }
 }

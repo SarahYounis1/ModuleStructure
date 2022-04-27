@@ -1,5 +1,6 @@
 package com.example.repository.adapter;
-
+import com.example.domain.aggregate.User;
+import com.example.domain.repository.IUserRepository;
 import com.example.exception.UserAlreadyExistException;
 import com.example.repository.entity.Tokens;
 import com.example.repository.entity.UserEntity;
@@ -10,6 +11,7 @@ import com.example.security.JWTSecurity.JwtUtil;
 import com.example.security.UserDetailsServiceImpl;
 import com.example.security.models.AuthenticationRequest;
 import com.example.security.models.AuthenticationResponse;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -20,11 +22,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.servlet.http.HttpServletRequest;
-
 
 @Service
-public class UserServiceImplementation {
+public class UserServiceAdapter implements IUserRepository {
 
     private final UserDetailsServiceImpl userDetailsService;
     private final JwtUtil jwtTokenUtil;
@@ -32,12 +32,14 @@ public class UserServiceImplementation {
     private final UserRepository userRepository;
     private final TokenRepository tokenRepository;
     private final AuthenticationManager authenticationManager;
+    @Autowired
+    private ModelMapper modelMapper;
 
 
     @Autowired
-    public UserServiceImplementation(UserDetailsServiceImpl userDetailsService, JwtUtil jwtTokenUtil, TaskRepository taskRepository,
-                                     UserRepository theUserRepository, TokenRepository tokenRepository,
-                                     AuthenticationManager authenticationManager) {
+    public UserServiceAdapter(UserDetailsServiceImpl userDetailsService, JwtUtil jwtTokenUtil, TaskRepository taskRepository,
+                              UserRepository theUserRepository, TokenRepository tokenRepository,
+                              AuthenticationManager authenticationManager) {
         this.userDetailsService = userDetailsService;
         this.jwtTokenUtil = jwtTokenUtil;
         this.taskRepository = taskRepository;
@@ -68,6 +70,7 @@ public class UserServiceImplementation {
         return (UserEntity) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 
+    @Override
     public AuthenticationResponse createAuthenticationToken(AuthenticationRequest authenticationRequest) {
         try {
 
@@ -110,16 +113,46 @@ public class UserServiceImplementation {
         userRepository.deleteById(requestingUser.getId());
     }
 
-    public void logOut(HttpServletRequest request) {
-        final String authorizationHeader = request.getHeader("Authorization");
-        String jwt = authorizationHeader.substring(7); //get the jwt and delete by it
-        tokenRepository.deleteById(jwt);
+//    public void logOut(HttpServletRequest request) {
+//        final String authorizationHeader = request.getHeader("Authorization");
+//        String jwt = authorizationHeader.substring(7); //get the jwt and delete by it
+//        tokenRepository.deleteById(jwt);
+//    }
+//
+//    public void logOutAll() {
+//        //delete all  jwt for this user
+//        UserEntity requestingUser= (UserEntity) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+//        tokenRepository.deleteAllByUserId(requestingUser.getId());
+//
+//    }
+
+    @Override
+    public User save(User user) {
+        UserEntity userE = convertToEntity(user);
+        return convertToModel(createNewUser(userE));
     }
 
-    public void logOutAll() {
-        //delete all  jwt for this user
-        UserEntity requestingUser= (UserEntity) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        tokenRepository.deleteAllByUserId(requestingUser.getId());
+    @Override
+    public User update(User user) {
+        UserEntity userE = convertToEntity(user);
+        return convertToModel(editUser(userE));
+    }
 
+    @Override
+    public void deleteByID() {
+            deleteUser();
+    }
+
+    @Override
+    public User getByID() {
+        return convertToModel(getUserInfo());
+    }
+
+    private UserEntity convertToEntity(User user){
+        return modelMapper.map(user, UserEntity.class);
+    }
+
+    private User convertToModel(UserEntity userEntity){
+        return modelMapper.map(userEntity, User.class);
     }
 }

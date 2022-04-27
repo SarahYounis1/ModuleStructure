@@ -1,11 +1,15 @@
 package com.example.domain.service;
 
-import com.example.domain.aggregate.Task;
+
+import com.example.domain.aggregate.User;
+import com.example.security.models.AuthenticationRequest;
+import com.example.security.models.AuthenticationResponse;
 
 public interface IUserService {
 
-    Task save(Task task);
-    Task update(Task task);
-    void deleteByID(Long id);
-    Task getByID(Long id);
+    User save(User user);
+    User update(User user);
+    void deleteByID();
+    User getByID();
+    AuthenticationResponse createAuthenticationToken(AuthenticationRequest authenticationRequest) ;
 }
