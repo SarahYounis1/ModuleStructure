@@ -16,6 +16,7 @@ public class JwtUtil {
     private final String SECRET_KEY = "secret";// this key is used to encrypt the jwt it should be stored in a save file and encrypted and decrypted when needed
 
     private TokenRepository tokenRepository;
+    public JwtUtil(){}
 
     public JwtUtil(TokenRepository tokenRepository) {
         this.tokenRepository = tokenRepository;

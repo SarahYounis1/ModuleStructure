@@ -22,6 +22,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 
 @Service
 public class UserServiceAdapter implements IUserRepository {
@@ -33,7 +35,7 @@ public class UserServiceAdapter implements IUserRepository {
     private final TokenRepository tokenRepository;
     private final AuthenticationManager authenticationManager;
     @Autowired
-    private ModelMapper modelMapper;
+    private ModelMapper modelMapper = new ModelMapper();
 
 
     @Autowired
@@ -50,25 +52,8 @@ public class UserServiceAdapter implements IUserRepository {
 
 
     //sec version
-    public UserEntity createNewUser(UserEntity newUser)  {
-        if(userRepository.findByUsername(newUser.getUsername()).isEmpty()){
-            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-            newUser.setPassword( "{bcrypt}" + encoder.encode(newUser.getPassword()));
-            userRepository.save(newUser);
-            return newUser;
-        }
-        else {
-
-            throw new UserAlreadyExistException();
-        }
-    }
 
     //ses version
-    @Transactional
-    public UserEntity getUserInfo(){
-
-        return (UserEntity) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-    }
 
     @Override
     public AuthenticationResponse createAuthenticationToken(AuthenticationRequest authenticationRequest) {
@@ -93,60 +78,52 @@ public class UserServiceAdapter implements IUserRepository {
         return new AuthenticationResponse(jwt);
     }
 
+
+    @Override
+    public User save(User user) {
+        UserEntity newUser = convertToEntity(user);
+        if(userRepository.findByUsername(newUser.getUsername()).isEmpty()){
+            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+            newUser.setPassword( "{bcrypt}" + encoder.encode(newUser.getPassword()));
+            userRepository.save(newUser);
+            return convertToModel(newUser);
+        }
+        else {
+
+            throw new UserAlreadyExistException();
+        }
+
+    }
+
+    @Override
     @Transactional
-    public UserEntity editUser(UserEntity editUser) {
-        UserEntity requestingUser= (UserEntity) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    public User update(User user) {
+        User requestingUser= (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+       // UserEntity editUser = convertToEntity(user);
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        requestingUser.setPassword( "{bcrypt}" + encoder.encode(editUser.getPassword()));
-        requestingUser.setName(editUser.getName());
-        requestingUser.setEmail(editUser.getEmail());
-        requestingUser.setAge(editUser.getAge());
-        userRepository.save(requestingUser);
+        requestingUser.setPassword( "{bcrypt}" + encoder.encode(user.getPassword()));
+        requestingUser.setName(user.getName());
+        requestingUser.setEmail(user.getEmail());
+        requestingUser.setAge(user.getAge());
+        userRepository.save(convertToEntity(requestingUser));
+       // return requestingUser;
         return requestingUser;
     }
 
+    @Override
     @Transactional
-    public void deleteUser() {
-        UserEntity requestingUser= (UserEntity) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    public void deleteByID() {
+        User requestingUser= (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         taskRepository.deleteAllByUser_Id(requestingUser.getId());
         tokenRepository.deleteAllByUserId(requestingUser.getId());
         userRepository.deleteById(requestingUser.getId());
     }
 
-//    public void logOut(HttpServletRequest request) {
-//        final String authorizationHeader = request.getHeader("Authorization");
-//        String jwt = authorizationHeader.substring(7); //get the jwt and delete by it
-//        tokenRepository.deleteById(jwt);
-//    }
-//
-//    public void logOutAll() {
-//        //delete all  jwt for this user
-//        UserEntity requestingUser= (UserEntity) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-//        tokenRepository.deleteAllByUserId(requestingUser.getId());
-//
-//    }
-
-    @Override
-    public User save(User user) {
-        UserEntity userE = convertToEntity(user);
-        return convertToModel(createNewUser(userE));
-    }
-
-    @Override
-    public User update(User user) {
-        UserEntity userE = convertToEntity(user);
-        return convertToModel(editUser(userE));
-    }
-
-    @Override
-    public void deleteByID() {
-            deleteUser();
-    }
-
     @Override
     public User getByID() {
-        return convertToModel(getUserInfo());
+        return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
+
 
     private UserEntity convertToEntity(User user){
         return modelMapper.map(user, UserEntity.class);
