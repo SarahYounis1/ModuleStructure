@@ -1,11 +1,14 @@
 package com.example.domain.aggregate;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
-public class User {
+public class User  {
 
 
     private Long id;
@@ -30,6 +33,15 @@ public class User {
 
     private List<Tokens> tokens = new ArrayList<>();
 
+    public User(Long id,String name, String email, String username, String pass, int age) {
+        this.id=id;
+        this.name=name;
+        this.username =username;
+        this.email=email;
+        this.password=pass;
+        this.age=age;
+    }
+
     public Long getId() {
         return id;
     }
@@ -53,6 +65,7 @@ public class User {
     public void setEmail(String email) {
         this.email = email;
     }
+
 
     public String getPassword() {
         return password;

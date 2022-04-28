@@ -1,6 +1,5 @@
 package com.example.controller;
 import com.example.domain.aggregate.User;
-import com.example.repository.entity.UserEntity;
 import com.example.security.models.AuthenticationRequest;
 import com.example.security.models.AuthenticationResponse;
 import com.example.service.service.UserService;

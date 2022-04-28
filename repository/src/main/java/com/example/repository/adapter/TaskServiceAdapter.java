@@ -32,8 +32,6 @@ public class TaskServiceAdapter implements ITaskRepository {
 
     @Autowired
     private ModelMapper modelMapper;
-   // @Autowired
-    //private ITaskRepository taskRepository;
 
     @Autowired
     public TaskServiceAdapter(UserRepository userRepository , TaskRepository taskRepository) {
