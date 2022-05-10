@@ -10,6 +10,14 @@ public class Task {
     String description;
     Boolean completed;
 
+    public Task(String description, boolean completed, Date starter, Date endDate) {
+        this.description =description;
+        this.completed=completed;
+        this.startDate=starter;
+        this.endDate=endDate;
+    }
+    public Task(){}
+
     public Long getId() {
         return id;
     }

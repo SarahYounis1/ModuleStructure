@@ -31,72 +31,12 @@ public class TaskServiceAdapter implements ITaskRepository {
     private static final int DEFAULT_PAGE_SIZE = 10;
 
     @Autowired
-    private ModelMapper modelMapper;
+    private ModelMapper modelMapper=new ModelMapper();
 
     @Autowired
     public TaskServiceAdapter(UserRepository userRepository , TaskRepository taskRepository) {
        this.taskRepository = taskRepository;
         this.userRepository=userRepository;
-    }
-
-    public Page<TaskEntity> getAllTasks(Optional<Integer> page, Optional <String> sortDirection , Optional<String> sortBy ){
-        UserEntity requestingUser= (UserEntity) SecurityContextHolder.getContext()
-                .getAuthentication().getPrincipal();
-        return taskRepository.findAllByUser_Id(requestingUser.getId(), PageRequest.of(page.orElse(0), 5,
-                Sort.Direction.fromString(sortDirection.orElse("desc")),sortBy.orElse("id")));
-    }
-
-    public TaskEntity getTask(Long id) throws AccessDeniedException {
-        TaskEntity task = taskRepository.findById(id).orElseThrow(() -> new NotFoundException("Task Not Found" +id));
-        UserEntity requestedUser = userRepository.findById(task.getUserId()).orElseThrow(() -> new NotFoundException("User not found"+task.getUserId()));
-        UserEntity requestingUser = (UserEntity) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (requestedUser.getId().longValue()==requestingUser.getId().longValue() && requestedUser.getPassword().equals(requestingUser.getPassword()))
-            return task;
-        else throw new AccessDeniedException("You are not allowed to access this page!");
-    }
-
-    public TaskEntity createTask(TaskEntity task) {
-        UserEntity requestingUser= (UserEntity) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        checkTimeValidation(task,false);
-        task.setUser(requestingUser);
-        taskRepository.save(task);
-        requestingUser.addTask(task);
-        userRepository.save(requestingUser);
-        return task;
-    }
-
-    public TaskEntity editTask(TaskEntity editTask, Long id)  throws AccessDeniedException {
-        TaskEntity task = taskRepository.findById(id).orElseThrow(() -> new NotFoundException("task not found"+id));
-        UserEntity requestedUser=userRepository.findById(task.getUserId()).orElseThrow(() -> new NotFoundException("User not found" + task.getUserId()));
-        UserEntity requestingUser= (UserEntity) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (requestedUser.getId().longValue()==requestingUser.getId().longValue()
-                && requestedUser.getPassword().equals(requestingUser.getPassword())) {
-            checkTimeValidation(editTask,true);
-            task.setDescription(editTask.getDescription());
-            task.setCompleted(editTask.isCompleted());
-            task.setUser(requestingUser);
-            task.setStartDate(editTask.getStartDate());
-            task.setEndDate(editTask.getEndDate());
-            taskRepository.save(task);
-            return task;
-        }
-        else {
-            throw new AccessDeniedException("You are not allowed to access this page!");
-        }
-    }
-
-    public void deleteTask(Long id) throws AccessDeniedException{
-        TaskEntity task = taskRepository.findById(id).orElseThrow(() -> new NotFoundException("Task not Found" +id));
-        UserEntity requestedUser=userRepository.findById(task.getUserId()).orElseThrow(() -> new NotFoundException("User not found "+task.getUserId()));
-        UserEntity requestingUser= (UserEntity) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (requestedUser.getId().longValue()==requestingUser.getId().longValue() && requestedUser.getPassword().equals(requestingUser.getPassword())) {
-            if (taskRepository.existsById(id)) {
-                taskRepository.deleteById(id);
-            }
-        }
-        else {
-            throw new AccessDeniedException("You are not allowed to access this page!");
-        }
     }
 
     public void checkTimeValidation(TaskEntity task , boolean edit){
@@ -124,28 +64,70 @@ public class TaskServiceAdapter implements ITaskRepository {
     @Override
     public Task save(Task task) {
         TaskEntity taskE = convertToEntity(task);
-      return convertToModel(createTask(taskE)) ;
+        UserEntity requestingUser= (UserEntity) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        checkTimeValidation(taskE,false);
+        taskE.setUser(requestingUser);
+        taskRepository.save(taskE);
+        requestingUser.addTask(taskE);
+        userRepository.save(requestingUser);
+      return convertToModel(taskE) ;
     }
 
     @Override
-    public Task update(Task task, Long id) throws AccessDeniedException {
+    public Task update(Task task, Long id ,UserEntity u) throws AccessDeniedException {
         TaskEntity taskE = convertToEntity(task);
-        return convertToModel(editTask(taskE,taskE.getId())) ;
+        taskE.setUser(u);
+        TaskEntity taskR = taskRepository.findById(id).orElseThrow(() -> new NotFoundException("task not found"+id));
+        UserEntity requestedUser=userRepository.findById(taskE.getUserId()).orElseThrow(() -> new NotFoundException("User not found" + taskR.getUserId()));
+        UserEntity requestingUser= (UserEntity) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (requestedUser.getId().longValue()==requestingUser.getId().longValue()
+                && requestedUser.getPassword().equals(requestingUser.getPassword())) {
+            checkTimeValidation(taskE,true);
+            taskR.setDescription(taskE.getDescription());
+            taskR.setCompleted(taskE.isCompleted());
+            taskR.setUser(requestingUser);
+            taskR.setStartDate(taskE.getStartDate());
+            taskR.setEndDate(taskE.getEndDate());
+            taskRepository.save(taskR);
+            return convertToModel(taskR);
+        }
+        else {
+            throw new AccessDeniedException("You are not allowed to access this page!");
+        }
     }
 
     @Override
     public void deleteByID(Long id) throws AccessDeniedException {
-        deleteTask(id);
+        TaskEntity task = taskRepository.findById(id).orElseThrow(() -> new NotFoundException("Task not Found" +id));
+        UserEntity requestedUser=userRepository.findById(task.getUserId()).orElseThrow(() -> new NotFoundException("User not found "+task.getUserId()));
+        UserEntity requestingUser= (UserEntity) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (requestedUser.getId().longValue()==requestingUser.getId().longValue() && requestedUser.getPassword().equals(requestingUser.getPassword())) {
+            if (taskRepository.existsById(id)) {
+                taskRepository.deleteById(id);
+            }
+        }
+        else {
+            throw new AccessDeniedException("You are not allowed to access this page!");
+        }
     }
 
     @Override
     public Task getByID(Long id) throws AccessDeniedException {
-        return convertToModel(getTask(id));
+        TaskEntity task = taskRepository.findById(id).orElseThrow(() -> new NotFoundException("Task Not Found" +id));
+        UserEntity requestedUser = userRepository.findById(task.getUserId()).orElseThrow(() -> new NotFoundException("User not found"+task.getUserId()));
+        UserEntity requestingUser = (UserEntity) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (requestedUser.getId().longValue()==requestingUser.getId().longValue() && requestedUser.getPassword().equals(requestingUser.getPassword()))
+            return convertToModel(task);
+        else throw new AccessDeniedException("You are not allowed to access this page!");
     }
 
     @Override
     public Page<Task> getTasks(Optional<Integer> page, Optional<String> sortDirection, Optional<String> sortBy) {
-        return  new PageImpl<Task>(getAllTasks(page,sortDirection,sortBy).stream().map(entity -> convertToModel(entity)).collect(Collectors.toList()));
+        UserEntity requestingUser= (UserEntity) SecurityContextHolder.getContext()
+                .getAuthentication().getPrincipal();
+        Page<TaskEntity> pa = taskRepository.findAllByUser_Id(requestingUser.getId(), PageRequest.of(page.orElse(0), 5,
+                Sort.Direction.fromString(sortDirection.orElse("desc")),sortBy.orElse("id")));
+        return  new PageImpl<Task>(pa.stream().map(entity -> convertToModel(entity)).collect(Collectors.toList()));
     }
 
 }

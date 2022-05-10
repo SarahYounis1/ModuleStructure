@@ -86,7 +86,7 @@ public class TaskEntity {
     }
 
     public Long getUserId() {
-        return user.getId();
+        return this.user.getId();
     }
 
     public Date getStartDate() {return startDate;}

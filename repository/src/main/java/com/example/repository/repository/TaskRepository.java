@@ -15,8 +15,5 @@ public interface TaskRepository extends JpaRepository<TaskEntity,Long> {
     List<TaskEntity>findAllByUser_Id(Long id);
     List<TaskEntity> findAllByUser_IdAndEndDateIsAfterAndStartDateBefore
             (Long id,@Param("start") Date start,@Param("end") Date end);
-
-
     //No code is needed CRUD functions already exist within JPARepository
-
 }
